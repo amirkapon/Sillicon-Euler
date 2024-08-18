@@ -50,19 +50,17 @@ void fft(vector<cd> &a, bool invert)
   }
 }
 
-vector<size_t> multiply(vector<size_t> const &a, vector<size_t> const &b)
+vector<size_t> square(vector<size_t> const &a)
 {
-  vector<cd> fa(a.begin(), a.end()), fb(b.begin(), b.end());
+  vector<cd> fa(a.begin(), a.end());
   int n = 1;
-  while (n < a.size() + b.size())
+  while (n < a.size() * 2)
     n <<= 1;
-  fa.resize(n);
-  fb.resize(n);
 
+  fa.resize(n);
   fft(fa, false);
-  fft(fb, false);
   for (int i = 0; i < n; i++)
-    fa[i] *= fb[i];
+    fa[i] *= fa[i];
   fft(fa, true);
 
   vector<size_t> result(n);
@@ -105,7 +103,7 @@ int64_t find_sum()
   std::array<bool, BOUND> is_abundant = calculate_is_abundant(sum_of_divisors);
   std::array<bool, BOUND> is_reachable = {0};
   std::vector<size_t> abundants(is_abundant.begin(), is_abundant.end());
-  std::vector<size_t> sum_of_pairs = multiply(abundants, abundants);
+  std::vector<size_t> sum_of_pairs = square(abundants);
   int64_t sum = 0;
   for (size_t i = 0; i < BOUND; i++)
   {
