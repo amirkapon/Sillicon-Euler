@@ -8,35 +8,50 @@
 const size_t BOUND = 28124;
 using std::vector;
 using cd = std::complex<double>;
+using std::swap;
 const double PI = acos(-1);
 
-void fft(std::vector<cd> &a, bool invert) {
+void fft(vector<cd> &a, bool invert)
+{
   int n = a.size();
-  if (n == 1)
-    return;
 
-  std::vector<cd> a0(n / 2), a1(n / 2);
-  for (int i = 0; 2 * i < n; i++) {
-    a0[i] = a[2 * i];
-    a1[i] = a[2 * i + 1];
+  for (int i = 1, j = 0; i < n; i++)
+  {
+    int bit = n >> 1;
+    for (; j & bit; bit >>= 1)
+      j ^= bit;
+    j ^= bit;
+
+    if (i < j)
+      swap(a[i], a[j]);
   }
-  fft(a0, invert);
-  fft(a1, invert);
 
-  double ang = 2 * PI / n * (invert ? -1 : 1);
-  cd w(1), wn(cos(ang), sin(ang));
-  for (int i = 0; 2 * i < n; i++) {
-    a[i] = a0[i] + w * a1[i];
-    a[i + n / 2] = a0[i] - w * a1[i];
-    if (invert) {
-      a[i] /= 2;
-      a[i + n / 2] /= 2;
+  for (int len = 2; len <= n; len <<= 1)
+  {
+    double ang = 2 * PI / len * (invert ? -1 : 1);
+    cd wlen(cos(ang), sin(ang));
+    for (int i = 0; i < n; i += len)
+    {
+      cd w(1);
+      for (int j = 0; j < len / 2; j++)
+      {
+        cd u = a[i + j], v = a[i + j + len / 2] * w;
+        a[i + j] = u + v;
+        a[i + j + len / 2] = u - v;
+        w *= wlen;
+      }
     }
-    w *= wn;
+  }
+
+  if (invert)
+  {
+    for (cd &x : a)
+      x /= n;
   }
 }
 
-vector<size_t> multiply(vector<size_t> const &a, vector<size_t> const &b) {
+vector<size_t> multiply(vector<size_t> const &a, vector<size_t> const &b)
+{
   vector<cd> fa(a.begin(), a.end()), fb(b.begin(), b.end());
   int n = 1;
   while (n < a.size() + b.size())
@@ -60,10 +75,13 @@ vector<size_t> multiply(vector<size_t> const &a, vector<size_t> const &b) {
  * Return an array that satisfies:
  * array[i] = sum of divisors of i
  */
-std::array<size_t, BOUND> sieve_of_eratosthenes() {
+std::array<size_t, BOUND> sieve_of_eratosthenes()
+{
   std::array<size_t, BOUND> sum_of_divisors = {0};
-  for (size_t i = 1; i < BOUND; i++) {
-    for (size_t j = 2 * i; j < BOUND; j += i) {
+  for (size_t i = 1; i < BOUND; i++)
+  {
+    for (size_t j = 2 * i; j < BOUND; j += i)
+    {
       sum_of_divisors[j] += i;
     }
   }
@@ -71,30 +89,36 @@ std::array<size_t, BOUND> sieve_of_eratosthenes() {
 }
 
 std::array<bool, BOUND>
-calculate_is_abundant(const std::array<size_t, BOUND> &sum_of_divisors) {
+calculate_is_abundant(const std::array<size_t, BOUND> &sum_of_divisors)
+{
   std::array<bool, BOUND> is_abundant;
-  for (size_t i = 1; i < BOUND; i++) {
+  for (size_t i = 1; i < BOUND; i++)
+  {
     is_abundant[i] = sum_of_divisors[i] > i;
   }
   return is_abundant;
 }
 
-int64_t find_sum() {
+int64_t find_sum()
+{
   std::array<size_t, BOUND> sum_of_divisors = sieve_of_eratosthenes();
   std::array<bool, BOUND> is_abundant = calculate_is_abundant(sum_of_divisors);
   std::array<bool, BOUND> is_reachable = {0};
   std::vector<size_t> abundants(is_abundant.begin(), is_abundant.end());
   std::vector<size_t> sum_of_pairs = multiply(abundants, abundants);
   int64_t sum = 0;
-  for (size_t i = 0; i < BOUND; i++) {
-    if (sum_of_pairs[i] == 0) {
+  for (size_t i = 0; i < BOUND; i++)
+  {
+    if (sum_of_pairs[i] == 0)
+    {
       sum += i;
     }
   }
   return sum;
 }
 
-int main() {
+int main()
+{
   std::chrono::time_point<std::chrono::system_clock> start, end;
   start = std::chrono::system_clock::now();
   int64_t sum = find_sum();
